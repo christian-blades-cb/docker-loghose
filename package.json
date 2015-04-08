@@ -30,6 +30,7 @@
     "minimist": "^1.1.0",
     "never-ending-stream": "^1.1.0",
     "pump": "^1.0.0",
-    "through2": "^0.6.3"
+    "through2": "^0.6.3",
+    "logfmt": "^1.2.0"
   }
 }

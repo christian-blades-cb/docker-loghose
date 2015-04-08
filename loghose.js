@@ -6,6 +6,7 @@ var bl = require('bl')
 var pump = require('pump')
 var allContainers = require('docker-allcontainers')
 var minimist = require('minimist')
+var logfmt = require('logfmt')
 
 function loghose (opts) {
   opts = opts || {}
@@ -13,7 +14,7 @@ function loghose (opts) {
   var events = opts.events || allContainers(opts)
   var streams = {}
   var oldDestroy = result.destroy
-  var toLine = opts.json ? toLineJSON : toLineString
+  var toLine = opts.noparse ? toLineString : toLineParse
 
   result.destroy = function() {
     Object.keys(streams).forEach(detachContainer)
@@ -59,11 +60,15 @@ function loghose (opts) {
     ).pipe(result, { end: false })
   }
 
-  function toLineJSON(line) {
+  function toLineParse(line) {
     try {
       return JSON.parse(line)
     } catch(err) {
-      return toLineString(line)
+      try { // I'm so sorry about the nesting
+        return logfmt.parse(line.toString())
+      } catch (err) {
+        return toLineString(line)
+      }
     }
   }
 
@@ -109,18 +114,18 @@ module.exports = loghose
 
 function cli() {
   var argv = minimist(process.argv.slice(2), {
-    boolean: ['json'],
+    boolean: ['noparse'],
     alias: {
       'help': 'h',
-      'json': 'j'
+      'noparse': 'n'
     },
     default: {
-      json: false
+      noparse: false
     }
   })
 
   if (argv.help) {
-    console.log('Usage: docker-loghose [--json] [--help]')
+    console.log('Usage: docker-loghose [--noparse] [--help]')
     process.exit(1)
   }
 
